@@ -65,8 +65,8 @@ public final class SlotAudioBuffer: @unchecked Sendable {
         return Date().timeIntervalSince(lastAudio)
     }
 
-    /// Time since a block louder than `soundThreshold` arrived. Devices keep
-    /// sending silence while nothing plays, so this is what "playing" means.
+    /// Time since a block louder than `soundThreshold` arrived. Devices can send
+    /// quiet frames around playback, so this is what "playing" means.
     public var secondsSinceSound: TimeInterval {
         lock.lock()
         defer { lock.unlock() }
@@ -80,7 +80,9 @@ public final class SlotAudioBuffer: @unchecked Sendable {
     public var droppedFrames: UInt64 { ap_slot_dropped_frames(core) }
 
     public func setTarget(seconds: Double) {
-        ap_slot_set_target(core, UInt32(max(0.001, seconds) * SlotAudioFormat.sampleRate))
+        // 0 is allowed: the render callback then starts playing as soon as
+        // any audio is buffered.
+        ap_slot_set_target(core, UInt32(max(0, seconds) * SlotAudioFormat.sampleRate))
     }
 
     /// Fade out over 20 ms and clear.

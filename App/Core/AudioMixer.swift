@@ -23,7 +23,7 @@ final class AudioMixer {
     private var chains: [Int: Chain] = [:]
     private(set) var pinnedDevice: AudioDeviceID?
     private var configObserver: NSObjectProtocol?
-    private let log = Logger(subsystem: "com.audiopipe.app", category: "audio")
+    private let log = Logger(subsystem: "com.quinston.audiopipe", category: "audio")
 
     /// Called on the main queue after the graph was rebuilt for a new device.
     var onRebuild: (() -> Void)?

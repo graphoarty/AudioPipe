@@ -1,6 +1,6 @@
 name: AudioPipe
 options:
-  bundleIdPrefix: com.audiopipe
+  bundleIdPrefix: com.quinston
   deploymentTarget:
     macOS: "14.0"
   createIntermediateGroups: true
@@ -27,6 +27,9 @@ targets:
     info:
       path: App/Info.plist
       properties:
+        # Version shown in Finder's Get Info; bump MARKETING_VERSION per release.
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         # USB iPhones and iPads are camera-class capture devices, so capturing
         # even their audio needs Camera access (and only that).
         NSCameraUsageDescription: AudioPipe plays sound from iPhones and iPads plugged into this Mac by USB. macOS treats these devices as cameras, so it asks for camera access. AudioPipe only uses their audio and never records video.
@@ -36,13 +39,37 @@ targets:
         com.apple.security.device.camera: true
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.audiopipe.app
+        PRODUCT_BUNDLE_IDENTIFIER: com.quinston.audiopipe
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: App/Info.plist
         CODE_SIGN_ENTITLEMENTS: App/AudioPipe.entitlements
+        # App/Resources/Assets.xcassets, rendered by Scripts/make-app-icon.sh
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         OTHER_CODE_SIGN_FLAGS: "--options=runtime"
+        # Signed by the "Quinston Pimenta" Developer Program team. A stable team
+        # signature also keeps macOS's Camera permission across rebuilds (ad-hoc
+        # signatures change every build, so macOS asked again each time).
+        DEVELOPMENT_TEAM: Q694HU5XXH
+      configs:
+        Debug:
+          CODE_SIGN_IDENTITY: "Apple Development"
+        Release:
+          # Developer ID for distribution outside the App Store; a secure
+          # timestamp is required for notarization.
+          CODE_SIGN_IDENTITY: "Developer ID Application"
+          OTHER_CODE_SIGN_FLAGS: "--options=runtime --timestamp"
+          # No get-task-allow (debugger attach) in release builds.
+          CODE_SIGN_INJECT_BASE_ENTITLEMENTS: NO
     dependencies:
       - package: ReceiverKit
+    postBuildScripts:
+      - name: Refresh icon caches
+        basedOnDependencyAnalysis: false
+        script: |
+          # Finder and the Dock cache app icons by bundle path and modification
+          # date, and rebuilding doesn't change the bundle folder's date, so a new
+          # icon wouldn't show. Bump it on every build.
+          touch "${TARGET_BUILD_DIR}/${WRAPPER_NAME}"
 schemes:
   AudioPipe:
     build:

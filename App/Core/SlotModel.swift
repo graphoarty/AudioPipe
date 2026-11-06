@@ -5,7 +5,7 @@ import ReceiverKit
 enum SlotState: Equatable {
     case off
     case starting
-    /// Capturing; the device is sending silence.
+    /// Capturing, but nothing is playing on the device (it sends no audio then).
     case connected
     case playing
     case failed(String)

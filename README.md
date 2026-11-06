@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="Design/AppIcon.svg" width="160" height="160" alt="AudioPipe app icon: a USB-C plug with sound level bars coming out of it">
+</p>
+
 # AudioPipe: play iPhone and iPad audio on your Mac over USB
 
 **AudioPipe is a macOS menu bar app that plays the sound from iPhones and iPads plugged into your Mac by USB cable.** Connect one device or several. Each gets its own channel with volume, mute and solo, and AudioPipe mixes them live to your Mac's speakers, headphones or audio interface.
@@ -22,7 +26,7 @@ There's no AirPlay and no Wi-Fi involved, so there's no AirPlay delay, and nothi
 - **iPhone and iPad audio on Mac over USB.** Plug in a device and its sound plays on the Mac. No app needed on the device.
 - **Several devices at once.** Every plugged-in iPhone or iPad gets its own channel in a live mixer.
 - **Per-device volume, mute and solo**, plus a master volume, level meters and a peak limiter to stop clipping.
-- **Low delay.** The audio comes over the cable, with a small adjustable buffer (40 ms by default) instead of AirPlay's roughly 2 seconds.
+- **Low delay.** The audio comes over the cable, with a small buffer you can set anywhere from 0 to 200 ms (30 ms by default) instead of AirPlay's roughly 2 seconds.
 - **Any output device.** Follow the system output or pin one: built-in speakers, wired or Bluetooth headphones, an audio interface, or a virtual device for recording and streaming.
 - **Clock drift correction.** Each channel is kept in sync with the Mac's output clock, so the delay doesn't creep up over long sessions.
 - **Menu bar app.** Quick controls in the menu bar, launch at login, and per-device volumes remembered between sessions.
@@ -34,7 +38,7 @@ You can already send audio to a Mac with AirPlay, but it's built for music and v
 
 | | AirPlay to Mac | AudioPipe over USB |
 |---|---|---|
-| Delay | Around 2 seconds for buffered audio | Mac adds a 40 ms buffer by default (adjustable 20–200 ms) plus your output device's latency |
+| Delay | Around 2 seconds for buffered audio | Mac adds a 30 ms buffer by default (adjustable 0–200 ms) plus your output device's latency |
 | Several devices at once | The built-in AirPlay Receiver accepts one sender at a time | Yes, one channel per plugged-in device |
 | Mixer | No | Volume, mute, solo, master, limiter |
 | Connection | Wi-Fi, needs both on the same network | USB cable; no network needed |
@@ -56,12 +60,28 @@ You can already send audio to a Mac with AirPlay, but it's built for music and v
 
 ## Install and build
 
-AudioPipe is built from source for now. You'll need Xcode and [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`).
+### Download
+
+1. Download the latest `AudioPipe-<version>.dmg` from [Releases](https://github.com/graphoarty/AudioPipe/releases/latest), open it, and drag **AudioPipe** to **Applications**.
+2. Open AudioPipe and click **Allow** when macOS asks for camera access. AudioPipe is signed with a Developer ID and notarized by Apple, so it opens like any other downloaded app.
+
+### Build from source
+
+You'll need Xcode and [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`).
 
 ```bash
 xcodegen generate
-xcodebuild -project AudioPipe.xcodeproj -scheme AudioPipe -derivedDataPath build/DerivedData build
+xcodebuild -project AudioPipe.xcodeproj -scheme AudioPipe -derivedDataPath build/DerivedData \
+  CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= build
 open build/DerivedData/Build/Products/Debug/AudioPipe.app
+```
+
+The project signs with the maintainer's Apple Developer team. `CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM=` signs your build ad-hoc instead, so you don't need that team's certificates. To sign with your own team, set `DEVELOPMENT_TEAM` to your team ID.
+
+To make a release disk image at `build/Release/AudioPipe-<version>.dmg`, set `MARKETING_VERSION` in `project.yml` and run the script below. It builds a universal Release app, signs the app and the DMG with the team's Developer ID, and has Apple notarize both, stapling the approval to each so they open even offline. The one-time setup (certificate and notarization credentials) is described at the top of the script.
+
+```bash
+Scripts/make-dmg.sh
 ```
 
 ## Getting started
@@ -98,7 +118,7 @@ While AudioPipe captures it, iOS and iPadOS send the device's sound to the Mac i
 
 ### How much delay is there?
 
-On the Mac side, the delay is the per-device buffer (40 ms by default) plus your output device's latency. Built-in speakers and wired headphones add a few milliseconds. Bluetooth headphones add much more (AirPods measured about 160 ms in testing), so use a wired output when delay matters. The device's own delay before sending isn't measured yet.
+On the Mac side, the delay is the per-device buffer (30 ms by default, adjustable down to 0 ms) plus your output device's latency. Built-in speakers and wired headphones add a few milliseconds. Bluetooth headphones add much more (AirPods measured about 160 ms in testing), so use a wired output when delay matters. The device's own delay before sending isn't measured yet.
 
 ### Does it work over Wi-Fi?
 
@@ -112,7 +132,7 @@ No. It doesn't capture video or your screen, and it makes no network connections
 
 - **The device doesn't appear.** Unlock it and tap **Trust This Computer**. Try another cable or port; some cables only charge.
 - **"Camera access is off".** Open **System Settings → Privacy & Security → Camera** and turn on AudioPipe. The Settings window has a button that takes you there.
-- **Clicks or dropouts.** Raise the buffer in **Settings → Audio** to 50–60 ms.
+- **Clicks or dropouts.** Raise the buffer in **Settings → Audio**. Audio arrives in blocks of about 21 ms, so below about 30 ms dropouts are likely; 40 ms played without any in testing.
 - **Too much delay.** Use a wired output rather than Bluetooth headphones, and lower the buffer if there are no dropouts.
 - **Audio stopped after sleep.** AudioPipe restarts capture when the Mac wakes. If it doesn't come back, right-click a channel and choose **Restart Capture**.
 - **Logs.** Each device's capture log is in `~/Library/Logs/AudioPipe/device-<n>.log`, also viewable under **Settings → Diagnostics**.
@@ -134,7 +154,7 @@ No. It doesn't capture video or your screen, and it makes no network connections
 
 ## Project status
 
-AudioPipe is an early release (0.1). It has been tested with one iPad on macOS. iPhones use the same capture mechanism, and several devices at once are supported by design, but neither has been tested yet. Reports are welcome.
+AudioPipe is an early release (0.1). It has been tested with an iPad and an iPhone, one at a time, on an Apple silicon Mac. Several devices at once are supported by design but not tested yet, and the Intel build hasn't been tried on an Intel Mac. Reports are welcome.
 
 ## For developers
 
@@ -146,6 +166,7 @@ AudioPipe is an early release (0.1). It has been tested with one iPad on macOS. 
 | `App/Views/` | Menu bar panel, Settings, onboarding, flat UI kit |
 | `Packages/ReceiverKit/` | Per-device ring buffer, drift controller, levels, rotating logs. `CAudioCore` holds the real-time-safe ring buffer and render callback in C |
 | `project.yml` | XcodeGen spec. It also generates `App/Info.plist` and `App/AudioPipe.entitlements`, so change those here |
+| `Design/` | App icon source: `make_icon_svg.py` writes `AppIcon.svg` (64 px and up) and `AppIcon-small.svg` (bolder art for 16 and 32 px). `Scripts/make-app-icon.sh` renders them into `App/Resources/Assets.xcassets` (needs `brew install librsvg`) |
 
 Unit tests (also run the ring-buffer stress test under Thread Sanitizer):
 
@@ -157,5 +178,5 @@ Notes:
 
 - The device sends a backlog of about 100 ms when capture starts. The first 0.5 s is discarded so each channel starts at its buffer target.
 - Buffer timestamps are assigned when audio reaches the Mac, so they can't show the device's own delay.
-- Each rebuild changes the ad-hoc code signature, so macOS asks for Camera access again.
+- macOS remembers Camera access by code signature. Team-signed builds keep it across rebuilds; ad-hoc builds change signature every time, so macOS asks again after each build.
 - Launch flags: `--skip-onboarding`, `--show-settings`, `--preview-popover` (opens the panel's content in a window).

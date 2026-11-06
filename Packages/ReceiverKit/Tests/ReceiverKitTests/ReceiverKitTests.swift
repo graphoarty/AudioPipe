@@ -173,6 +173,30 @@ final class RingCatchUpTests: XCTestCase {
 }
 
 final class SlotAudioBufferTests: XCTestCase {
+    func testZeroTargetPlaysAsSoonAsAudioArrives() {
+        let buffer = SlotAudioBuffer(capacitySeconds: 1.0)
+        buffer.setTarget(seconds: 0)
+        XCTAssertEqual(ap_slot_target(buffer.core), 0)
+
+        let tone = [Float](repeating: 0.5, count: 100)
+        tone.withUnsafeBufferPointer { t in buffer.push(left: t.baseAddress!, right: t.baseAddress!, frames: 100) }
+        var l = [Float](repeating: 0, count: 512), r = l
+        l.withUnsafeMutableBufferPointer { lp in
+            r.withUnsafeMutableBufferPointer { rp in
+                let abl = AudioBufferList.allocate(maximumBuffers: 2)
+                defer { free(abl.unsafeMutablePointer) }
+                abl[0] = AudioBuffer(mNumberChannels: 1, mDataByteSize: 2048, mData: lp.baseAddress)
+                abl[1] = AudioBuffer(mNumberChannels: 1, mDataByteSize: 2048, mData: rp.baseAddress)
+                ap_slot_render(buffer.core, 512, abl.unsafeMutablePointer)
+            }
+        }
+        // Plays the 100 buffered frames straight away, under the 5 ms (220-frame) fade-in.
+        XCTAssertEqual(l[99], 0.5 * 99 / 220, accuracy: 1e-6)
+        XCTAssertEqual(l[100], 0, "then silence for the rest of the block")
+        XCTAssertEqual(buffer.underruns, 1, "running dry counts as an underrun")
+        XCTAssertEqual(buffer.depthFrames, 0)
+    }
+
     func testPushFillsRingAndTracksSound() {
         let buffer = SlotAudioBuffer(capacitySeconds: 1.0)
         let silence = [Float](repeating: 0, count: 441)

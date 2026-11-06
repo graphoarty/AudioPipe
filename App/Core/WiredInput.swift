@@ -91,8 +91,8 @@ final class WiredCapture: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate
     private let buffer: SlotAudioBuffer
     private let log: RotatingLog
     private let session = AVCaptureSession()
-    private let control = DispatchQueue(label: "com.audiopipe.wired.control")
-    private let audioQueue = DispatchQueue(label: "com.audiopipe.wired.audio", qos: .userInteractive)
+    private let control = DispatchQueue(label: "com.quinston.audiopipe.wired.control")
+    private let audioQueue = DispatchQueue(label: "com.quinston.audiopipe.wired.audio", qos: .userInteractive)
 
     private let lock = NSLock()
     private var _status: Status = .stopped

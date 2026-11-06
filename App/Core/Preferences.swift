@@ -16,13 +16,18 @@ final class Preferences {
     var deviceVolumes: [String: Float] { didSet { defaults.set(deviceVolumes, forKey: "deviceVolumes") } }
     var onboardingCompleted: Bool { didSet { defaults.set(onboardingCompleted, forKey: "onboardingCompleted") } }
 
-    static let bufferRange: ClosedRange<Double> = 20...200
+    /// Any value is allowed, down to 0 ms. Audio arrives from a device in
+    /// ~21 ms blocks, so targets under about 30 ms risk dropouts (at 20 ms a
+    /// channel underran every few seconds in testing); Settings warns about it.
+    static let bufferRange: ClosedRange<Double> = 0...200
+    static let defaultBufferMs: Double = 30
+    static let dropoutRiskBelowMs: Double = 30
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         defaults.register(defaults: [
             "startAtLaunch": true,
-            "bufferTargetMs": 40.0,
+            "bufferTargetMs": Self.defaultBufferMs,
             "limiterEnabled": true,
             "masterVolume": Float(1.0),
             "onboardingCompleted": false,

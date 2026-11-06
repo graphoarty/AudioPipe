@@ -207,15 +207,21 @@ private struct AudioSettings: View {
                         .frame(width: 60, alignment: .trailing)
                 }
                 FlatSlider(
-                    value: $buffer, range: Preferences.bufferRange, step: 5,
+                    value: $buffer, range: Preferences.bufferRange, step: 1,
                     accessibilityLabel: "Buffer target",
                     accessibilityValueText: { "\(Int($0)) milliseconds" },
                     onEditingEnded: { model.setBufferTarget(ms: buffer) }
                 )
                 HStack {
-                    Text("20 ms").font(Theme.mono).foregroundStyle(.tertiary)
+                    Text("\(Int(Preferences.bufferRange.lowerBound)) ms").font(Theme.mono).foregroundStyle(.tertiary)
                     Spacer()
-                    Text("200 ms").font(Theme.mono).foregroundStyle(.tertiary)
+                    Text("\(Int(Preferences.bufferRange.upperBound)) ms").font(Theme.mono).foregroundStyle(.tertiary)
+                }
+                if buffer < Preferences.dropoutRiskBelowMs {
+                    Label("Below \(Int(Preferences.dropoutRiskBelowMs)) ms you may hear clicks or dropouts.",
+                          systemImage: "exclamationmark.triangle")
+                        .font(Theme.caption)
+                        .foregroundStyle(Theme.warning)
                 }
             }
 

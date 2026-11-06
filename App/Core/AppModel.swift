@@ -230,7 +230,8 @@ final class AppModel {
             let levels = rt.buffer.takeLevels()
             let audioRecent = rt.buffer.secondsSinceAudio < 0.5
 
-            // A device streams silence while nothing plays, so "playing" means sound, not data.
+            // A device sends nothing while nothing plays, and may send quiet
+            // frames around playback, so "playing" means sound, not data.
             let newState: SlotState
             switch rt.capture.status {
             case .failed(let reason): newState = .failed(reason)
@@ -260,7 +261,7 @@ final class AppModel {
             let dropped = rt.buffer.droppedFrames
             if m.droppedFrames != dropped { m.droppedFrames = dropped }
 
-            // Clock drift: while frames flow (silence included) and the buffer is primed.
+            // Clock drift: while frames flow (quiet ones included) and the buffer is primed.
             let flowing = audioRecent && (newState == .playing || newState == .connected)
             if flowing, rt.buffer.isPrimed {
                 if let rate = rt.drift.addSample(depthSeconds: depth, targetSeconds: target, dt: 0.1) {
