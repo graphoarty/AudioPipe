@@ -1,0 +1,52 @@
+name: AudioPipe
+options:
+  bundleIdPrefix: com.audiopipe
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    ENABLE_HARDENED_RUNTIME: YES
+    CODE_SIGN_IDENTITY: "-"
+    CODE_SIGN_STYLE: Manual
+    DEAD_CODE_STRIPPING: YES
+    ENABLE_DEBUG_DYLIB: NO
+packages:
+  ReceiverKit:
+    path: Packages/ReceiverKit
+targets:
+  AudioPipe:
+    type: application
+    platform: macOS
+    sources:
+      - path: App
+        excludes: ["Info.plist", "AudioPipe.entitlements"]
+    info:
+      path: App/Info.plist
+      properties:
+        # USB iPhones and iPads are camera-class capture devices, so capturing
+        # even their audio needs Camera access (and only that).
+        NSCameraUsageDescription: AudioPipe plays sound from iPhones and iPads plugged into this Mac by USB. macOS treats these devices as cameras, so it asks for camera access. AudioPipe only uses their audio and never records video.
+    entitlements:
+      path: App/AudioPipe.entitlements
+      properties:
+        com.apple.security.device.camera: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.audiopipe.app
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: App/Info.plist
+        CODE_SIGN_ENTITLEMENTS: App/AudioPipe.entitlements
+        OTHER_CODE_SIGN_FLAGS: "--options=runtime"
+    dependencies:
+      - package: ReceiverKit
+schemes:
+  AudioPipe:
+    build:
+      targets:
+        AudioPipe: all
+    run:
+      config: Debug
